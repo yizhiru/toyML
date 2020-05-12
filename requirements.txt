@@ -1,0 +1,5 @@
+numpy
+tensorflow>=2.1.0
+tensorflow_ranking>=0.3.0
+xgboost
+sklearn
