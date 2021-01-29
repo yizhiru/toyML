@@ -1,6 +1,23 @@
 # toyML
 
-机器学习落地业务项目，包括：
+## 介绍
 
-- Learning to Rank，包括：xgboost、tf-ranking
-- 点击率CTR预估，包括：LR、xgboost+LR
+机器学习项目，实现算法：
+
+一、Learning to Rank
+
+- LambdaGBDT (Xgboost)
+- LambdaDNN (tf-ranking)
+
+二、CTR点击率预估
+
+- LR (Logistic Regression)
+- XGBoost + LR
+- DIN (Deep Interest Network)
+
+
+
+## 参考资料
+
+
+
