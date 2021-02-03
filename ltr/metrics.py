@@ -9,7 +9,7 @@ def tf_ndcg(y_true, y_pred, y_group, top_n=5):
         begin_idx = 0
         grouped_y = []
         for g in y_group:
-            one = np.pad(y[begin_idx: begin_idx+g], (0, max(0, list_size - g)), 'constant')
+            one = np.pad(y[begin_idx: begin_idx + g], (0, max(0, list_size - g)), 'constant')
             grouped_y.append(one)
             begin_idx += g
         return tf.convert_to_tensor(np.array(grouped_y), dtype=float)
