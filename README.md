@@ -9,15 +9,19 @@
 - LambdaGBDT (Xgboost)
 - LambdaDNN (tf-ranking)
 
-二、CTR点击率预估
+二、CTR预估
 
 - LR (Logistic Regression)
 - XGBoost + LR
 - DIN (Deep Interest Network)
 
+三、Re-ranking 重排序
+- LambdaDNN
+- DLCM (Deep Listwise Context Model)
 
 
-## 参考资料
+
+
 
 
 
