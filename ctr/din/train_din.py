@@ -102,7 +102,7 @@ def main(_):
                              dense_features,
                              candidate_features,
                              hist_features,
-                             None)
+                             0.5)
     model.summary()
     model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.001),
                   loss=keras.losses.binary_crossentropy,

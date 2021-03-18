@@ -1,6 +1,5 @@
 from typing import List
 
-import tensorflow as tf
 from tensorflow import keras as keras
 from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Attention
@@ -9,7 +8,6 @@ from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Dropout
 from tensorflow.keras.layers import Flatten
 from tensorflow.keras.layers import PReLU
-from tensorflow.python.keras.engine.input_spec import InputSpec
 
 from features import DenseFeature
 from features import SequenceFeature
@@ -75,15 +73,15 @@ def create_din_model(sparse_features: List[SparseFeature],
         hist_attention_list.append(per_act_attention)
 
     # concat features
-    sparse_inputs = Flatten()(Concatenate(name='sparse_concat')(sparse_embed_list + [candidate_embed]))
-    dense_inputs = Flatten()(Concatenate(name='dense_concat')(dense_input_list))
+    sparse_inputs = Flatten(name='sparse_inputs')(Concatenate(name='sparse_concat')(sparse_embed_list + [candidate_embed]))
+    dense_inputs = Concatenate(name='dense_inputs')(dense_input_list)
     if len(hist_attention_list) == 1:
         hist_layer = hist_attention_list[0]
     else:
         hist_layer = Concatenate(name='attention_concat')(hist_attention_list)
-    hist_embed = Flatten()(hist_layer)
-    concat_features = Concatenate()([sparse_inputs, dense_inputs, hist_embed])
-    dense_layer1 = Dense(200, name='dense1')(concat_features)
+    hist_inputs = Flatten(name='hist_inputs')(hist_layer)
+    concat_inputs = Concatenate(name='concat_inputs')([sparse_inputs, dense_inputs, hist_inputs])
+    dense_layer1 = Dense(200, name='dense1')(concat_inputs)
     prelu_layer1 = PReLU(name='prelu1')(dense_layer1)
     dropout_layer1 = Dropout(rate=dropout_rate, name='dropout1')(prelu_layer1)
     dense_layer2 = Dense(80, name='dense2')(dropout_layer1)
