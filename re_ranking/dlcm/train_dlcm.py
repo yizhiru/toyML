@@ -1,3 +1,4 @@
+import os
 from typing import List
 
 import tensorflow as tf
@@ -5,16 +6,13 @@ import tensorflow_ranking as tfr
 from absl import flags
 from tensorflow import feature_column as fc
 from tensorflow import keras
-
+from tensorflow_ranking.python.keras.metrics import MeanAveragePrecisionMetric
 from tensorflow_ranking.python.keras.metrics import NDCGMetric
 from tensorflow_ranking.python.keras.metrics import PrecisionMetric
-from tensorflow_ranking.python.keras.metrics import MeanAveragePrecisionMetric
 
+from dlcm import DLCMRankingNetwork
 from features import DenseFeature
 from features import SparseFeature
-from dlcm import DLCMRankingNetwork
-
-import os
 
 flags.DEFINE_string("train_path", 'train.tfrecord', "Input file path used for training.")
 flags.DEFINE_string("eval_path", 'eval.tfrecord', "Input file path used for eval.")
@@ -88,7 +86,7 @@ def make_dataset(file_pattern,
     context_feature_columns, example_feature_columns = _create_feature_columns()
     context_feature_spec = fc.make_parse_example_spec(
         context_feature_columns.values())
-    label_column = tf.feature_column.numeric_column(_LABEL, dtype=tf.int64, default_value=0)
+    label_column = tf.feature_column.numeric_column(_LABEL, dtype=tf.int64, default_value=-1)
     example_feature_spec = tf.feature_column.make_parse_example_spec(
         list(example_feature_columns.values()) + [label_column])
     dataset = tfr.data.build_ranking_dataset(
