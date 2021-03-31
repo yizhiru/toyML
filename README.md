@@ -6,8 +6,8 @@
 
 一、Learning to Rank
 
-- LambdaGBDT (Xgboost)
-- LambdaDNN (tf-ranking)
+- LambdaGBDT
+- LambdaDNN
 
 二、CTR预估
 
