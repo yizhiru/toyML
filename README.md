@@ -18,8 +18,7 @@
 三、Re-ranking 重排序
 - LambdaDNN
 - DLCM (Deep Listwise Context Model)
-
-
+- PRM (Personalized Re-ranking Model)
 
 
 
