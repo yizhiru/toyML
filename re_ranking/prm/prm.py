@@ -54,7 +54,7 @@ class PRMRankingNetwork(MultivariateRankingNetwork):
         for layer in self.score_layers:
             outputs = layer(outputs, training=training)
         outputs = tf.squeeze(outputs, axis=-1)
-        outputs = tf.keras.layers.Softmax(axis=-1)(outputs)
+        outputs = tf.keras.layers.Softmax(axis=-1)(outputs, mask=mask)
         return outputs
 
     def get_config(self):

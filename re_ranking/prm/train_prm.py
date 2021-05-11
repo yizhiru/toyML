@@ -1,3 +1,4 @@
+import os
 from typing import List
 
 import tensorflow as tf
@@ -5,15 +6,13 @@ import tensorflow_ranking as tfr
 from absl import flags
 from tensorflow import feature_column as fc
 from tensorflow import keras
-
+from tensorflow_ranking.python.keras.metrics import MeanAveragePrecisionMetric
 from tensorflow_ranking.python.keras.metrics import NDCGMetric
 from tensorflow_ranking.python.keras.metrics import PrecisionMetric
-from tensorflow_ranking.python.keras.metrics import MeanAveragePrecisionMetric
 
 from features import DenseFeature
 from features import SparseFeature
 from re_ranking import prm
-import os
 
 flags.DEFINE_string("train_path", 'train.tfrecord', "Input file path used for training.")
 flags.DEFINE_string("eval_path", 'eval.tfrecord', "Input file path used for eval.")
@@ -21,7 +20,6 @@ flags.DEFINE_string("model_dir", 'prm_model', "Output directory for models.")
 
 flags.DEFINE_integer("batch_size", 1000, "The batch size for train.")
 flags.DEFINE_integer("epochs", 6, "Number of epochs for train.")
-
 flags.DEFINE_float("learning_rate", 0.01, "Learning rate for optimizer.")
 flags.DEFINE_integer("list_size", 15, "List size used for training. Use None for dynamic list size.")
 
