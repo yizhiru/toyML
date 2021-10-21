@@ -48,8 +48,8 @@ object RerankingTFRecordDataSetGenerator {
         val qid = row.getInt(0)
         val channel = row.getString(1)
         val uid = row.getString(2)
-        val itemId = row.getAs[Seq[String]](7).map(ele => Array(ele)).toArray
-        val label = row.getAs[Seq[Int]](72).map(ele => Array(ele)).toArray
+        val itemId = row.getAs[Seq[String]](3).map(ele => Array(ele)).toArray
+        val label = row.getAs[Seq[Int]](4).map(ele => Array(ele)).toArray
         val exampleListSize = itemId.length
 
         (qid, channel, uid, itemId, label, exampleListSize)
