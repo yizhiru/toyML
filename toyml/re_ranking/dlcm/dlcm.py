@@ -10,7 +10,7 @@ from tensorflow.python.keras import constraints
 from tensorflow.python.keras import initializers
 from tensorflow.python.keras import regularizers
 
-from re_ranking.network import MultivariateRankingNetwork
+from toyml.re_ranking.network import MultivariateRankingNetwork
 
 
 class _LocalRanking(tf.keras.layers.Layer):

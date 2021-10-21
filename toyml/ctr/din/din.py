@@ -9,11 +9,11 @@ from tensorflow.keras.layers import Dropout
 from tensorflow.keras.layers import Flatten
 from tensorflow.keras.layers import PReLU
 
-from features import DenseFeature
-from features import SequenceFeature
-from features import SparseFeature
-from utils import build_embedding_layer
-from utils import build_input_layer
+from toyml.features import DenseFeature
+from toyml.features import SequenceFeature
+from toyml.features import SparseFeature
+from toyml.utils import build_embedding_layer
+from toyml.utils import build_input_layer
 
 
 def create_din_model(sparse_features: List[SparseFeature],

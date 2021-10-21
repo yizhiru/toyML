@@ -10,9 +10,9 @@ from tensorflow_ranking.python.keras.metrics import MeanAveragePrecisionMetric
 from tensorflow_ranking.python.keras.metrics import NDCGMetric
 from tensorflow_ranking.python.keras.metrics import PrecisionMetric
 
-from features import DenseFeature
-from features import SparseFeature
-from re_ranking import prm
+from toyml.features import DenseFeature
+from toyml.features import SparseFeature
+from toyml.re_ranking import prm
 
 flags.DEFINE_string("train_path", 'train.tfrecord', "Input file path used for training.")
 flags.DEFINE_string("eval_path", 'eval.tfrecord', "Input file path used for eval.")

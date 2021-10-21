@@ -5,7 +5,7 @@ import tensorflow as tf
 from tensorflow_ranking.python import utils
 from tensorflow_ranking.python.keras.network import RankingNetwork
 
-from utils import build_embedding_layer
+from toyml.utils import build_embedding_layer
 
 
 class DNNRankingNetwork(RankingNetwork):

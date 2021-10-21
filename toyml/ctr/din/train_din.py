@@ -5,7 +5,7 @@ from absl import flags
 from tensorflow import keras as keras
 
 from din import create_din_model
-from features import SparseFeature, DenseFeature, SequenceFeature
+from toyml.features import SparseFeature, DenseFeature, SequenceFeature
 
 flags.DEFINE_string("train_path", 'train.tfrecord', "Input file path used for training.")
 flags.DEFINE_string("eval_path", 'eval.tfrecord', "Input file path used for eval.")
