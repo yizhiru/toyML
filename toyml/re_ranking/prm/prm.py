@@ -6,8 +6,8 @@ from tensorflow.python.ops import clip_ops
 from tensorflow.python.ops import math_ops
 from tensorflow_ranking.python import utils
 
-from re_ranking.network import MultivariateRankingNetwork
-from re_ranking.prm import TransformerEncoder
+from toyml.re_ranking.network import MultivariateRankingNetwork
+from toyml.re_ranking.prm import TransformerEncoder
 
 
 class PRMRankingNetwork(MultivariateRankingNetwork):

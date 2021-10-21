@@ -10,21 +10,21 @@ from tensorflow_ranking.python.keras.metrics import MeanAveragePrecisionMetric
 from tensorflow_ranking.python.keras.metrics import NDCGMetric
 from tensorflow_ranking.python.keras.metrics import PrecisionMetric
 
-from dlcm import DLCMRankingNetwork
-from features import DenseFeature
-from features import SparseFeature
+from dnn import DNNRankingNetwork
+from toyml.features import DenseFeature
+from toyml.features import SparseFeature
 
 flags.DEFINE_string("train_path", 'train.tfrecord', "Input file path used for training.")
 flags.DEFINE_string("eval_path", 'eval.tfrecord', "Input file path used for eval.")
-flags.DEFINE_string("model_dir", 'dlcm_model', "Output directory for models.")
+flags.DEFINE_string("model_dir", 'dnn_model', "Output directory for models.")
 
 flags.DEFINE_integer("batch_size", 1000, "The batch size for train.")
 flags.DEFINE_integer("epochs", 10, "Number of epochs for train.")
 
-flags.DEFINE_float("learning_rate", 0.01, "Learning rate for optimizer.")
+flags.DEFINE_float("learning_rate", 0.05, "Learning rate for optimizer.")
 flags.DEFINE_integer("list_size", 15, "List size used for training. Use None for dynamic list size.")
 
-flags.DEFINE_string('device_map', '3', 'CUDA visible devices.')
+flags.DEFINE_string('device_map', '2', 'CUDA visible devices.')
 
 FLAGS = flags.FLAGS
 
@@ -121,13 +121,15 @@ def train_and_eval():
     sparse_features = {}
     for feat in context_sparse_features + example_sparse_features:
         sparse_features[feat.feature_name] = feat
-    network = DLCMRankingNetwork(
+    network = DNNRankingNetwork(
         context_feature_columns=context_feature_columns,
         example_feature_columns=example_feature_columns,
         sparse_features=sparse_features,
+        hidden_layer_dims=[1024, 512, 256],
+        activation=tf.nn.relu,
         dropout=0.5)
 
-    loss = tfr.keras.losses.get(tfr.losses.RankingLossKey.LIST_MLE_LOSS)
+    loss = tfr.keras.losses.get(tfr.losses.RankingLossKey.PAIRWISE_LOGISTIC_LOSS)
     metrics = [PrecisionMetric(name='precision@2', topn=2),
                PrecisionMetric(name='precision@5', topn=5),
                MeanAveragePrecisionMetric(name='map@2', topn=2),
@@ -140,7 +142,7 @@ def train_and_eval():
         optimizer=tf.keras.optimizers.Adam(learning_rate=FLAGS.learning_rate),
         size_feature_name=_SIZE)
     callbacks = [keras.callbacks.ModelCheckpoint(filepath=FLAGS.model_dir,
-                                                 monitor='val_ndcg@2',
+                                                 monitor='val_precision@2',
                                                  mode='max',
                                                  save_best_only=True)
                  ]
@@ -159,4 +161,7 @@ def main(_):
 
 
 if __name__ == "__main__":
+    flags.mark_flag_as_required("train_path")
+    flags.mark_flag_as_required("eval_path")
+
     tf.compat.v1.app.run()

@@ -3,8 +3,7 @@ import os
 import xgboost as xgb
 from sklearn.datasets import load_svmlight_file
 
-from ltr import metrics
-from ltr import helper
+from toyml.ltr import metrics, helper
 
 root_path = 'ltrc_yahoo'
 X_train, y_train, qid_train = load_svmlight_file(os.path.join(root_path, 'train.txt'), query_id=True)
