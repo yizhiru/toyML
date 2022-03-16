@@ -90,7 +90,7 @@ object ItemCFSim {
       val score = nab / Math.sqrt(na * nb)
       (t._1, t._2, score, na, nb, nab)
     }
-      .toDF("feed1", "feed2", "sim_score", "na", "nb", "nab")
+      .toDF("item_id1", "item_id2", "sim_score", "na", "nb", "nab")
     simDF.show()
 
 
