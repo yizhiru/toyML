@@ -20,6 +20,9 @@
 - DLCM (Deep Listwise Context Model)
 - PRM (Personalized Re-ranking Model)
 
+四、召回
+- itemCF
+
 
 
 
