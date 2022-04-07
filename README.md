@@ -6,7 +6,7 @@
 - Learning to Rank
   - LambdaGBDT
   - LambdaDNN
-  - 
+
 - CTR预估
   - LR (Logistic Regression)
   - XGBoost + LR
