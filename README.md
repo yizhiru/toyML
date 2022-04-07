@@ -2,26 +2,28 @@
 
 ## 介绍
 
-机器学习项目，实现算法：
+工业界常见机器学习算法，实现：
+- Learning to Rank
+  - LambdaGBDT
+  - LambdaDNN
+  - 
+- CTR预估
+  - LR (Logistic Regression)
+  - XGBoost + LR
+  - DIN (Deep Interest Network)
 
-一、Learning to Rank
+- Re-ranking 重排序
+  - LambdaDNN
+  - DLCM (Deep Listwise Context Model)
+  - PRM (Personalized Re-ranking Model)
 
-- LambdaGBDT
-- LambdaDNN
+- 召回
+  - itemCF
 
-二、CTR预估
-
-- LR (Logistic Regression)
-- XGBoost + LR
-- DIN (Deep Interest Network)
-
-三、Re-ranking 重排序
-- LambdaDNN
-- DLCM (Deep Listwise Context Model)
-- PRM (Personalized Re-ranking Model)
-
-四、召回
-- itemCF
+Hive-UDF实现tf.feature_column特征处理，包括：
+- 离线特征哈希，categorical_column_with_hash_bucket
+- 离散特征词典索引，categorical_column_with_vocabulary_list
+- 连续特征分箱，bucketized_column
 
 
 
