@@ -296,7 +296,7 @@ object Node2VecSim {
         simNodes.map(t => (itemId, t._1, t._2))
       }
       .toSeq
-      .toDF("feed_id1", "feed_id2", "sim_score")
+      .toDF("item_id1", "item_id2", "sim_score")
 
     val tempViewName = s"temp_node2vec_recs_zjy"
     simDF.createOrReplaceTempView(tempViewName)

@@ -19,6 +19,7 @@
 
 - 召回
   - itemCF
+  - node2vec
 
 Hive-UDF实现tf.feature_column特征处理，包括：
 - 离线特征哈希，categorical_column_with_hash_bucket
