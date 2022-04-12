@@ -101,7 +101,6 @@ object ItemCFSim {
     spark.sql(s"create table ${params.outputTable} stored as orc as select * from $tempViewName")
 
     spark.stop()
-
   }
 
 }
