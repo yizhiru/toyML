@@ -4,7 +4,7 @@ import tensorflow as tf
 from absl import flags
 from tensorflow import keras as keras
 
-from din import create_din_model
+from toyml.ctr import create_din_model
 from toyml.features import SparseFeature, DenseFeature, SequenceFeature
 
 flags.DEFINE_string("train_path", 'train.tfrecord', "Input file path used for training.")
