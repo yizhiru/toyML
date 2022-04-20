@@ -1,7 +1,8 @@
 package io.github.yizhiru.toyml.util
 
 import org.apache.commons.math3.distribution.EnumeratedIntegerDistribution
-import spire.ClassTag
+
+import scala.reflect.ClassTag
 
 object RandomUtils {
 
