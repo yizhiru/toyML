@@ -1,7 +1,6 @@
 package io.github.yizhiru.toyml.i2i
 
 import io.github.yizhiru.toyml.util.RandomUtils
-import org.apache.spark.SparkContext
 import org.apache.spark.graphx.VertexId
 import org.apache.spark.mllib.feature.Word2Vec
 import org.apache.spark.rdd.RDD
@@ -119,9 +118,7 @@ object Node2VecSim {
         (uid, itemId)
       }
 
-    val vertexNeighborhood = collectNeighborhood(spark.sparkContext,
-      rdd,
-      params.maxDegree)
+    val vertexNeighborhood = collectNeighborhood(rdd, params.maxDegree)
     val walkPath = randomWalk(vertexNeighborhood, params)
 
     findSimNode(spark,
@@ -137,11 +134,10 @@ object Node2VecSim {
    * weight = nab * pmi
    * nab 为同时点击a、b的用户数，na为点击a的用户数，nb为点击b的用户数，D为所有点击行为数
    */
-  private def collectNeighborhood(sparkContext: SparkContext,
-                                  rdd: RDD[(String, Long)],
+  private def collectNeighborhood(rdd: RDD[(String, Long)],
                                   maxDegree: Int): RDD[VertexAttr] = {
 
-    val dBC = sparkContext.broadcast(rdd.count())
+    val dBC = rdd.sparkContext.broadcast(rdd.count())
 
     // 对用户做编号
     val user2IndexRDD = rdd.map(_._1)
@@ -283,7 +279,7 @@ object Node2VecSim {
       .setNumIterations(params.numIter)
       .setWindowSize(params.windowSize)
       .setMinCount(0)
-      .setVectorSize(params.windowSize)
+      .setVectorSize(params.nodeDim)
 
     val model = word2vec.fit(walkPath)
 
@@ -298,7 +294,7 @@ object Node2VecSim {
       .toSeq
       .toDF("item_id1", "item_id2", "sim_score")
 
-    val tempViewName = s"temp_node2vec_recs_zjy"
+    val tempViewName = s"temp_node2vec_recs"
     simDF.createOrReplaceTempView(tempViewName)
     spark.sql(s"use temp")
     spark.sql(s"drop table if exists ${params.outputTable}")
