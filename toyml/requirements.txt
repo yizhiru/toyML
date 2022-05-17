@@ -1,5 +1,5 @@
 numpy
-tensorflow>=2.4.0
+tensorflow>=2.8.0
 tensorflow_ranking>=0.3.0
 xgboost
 sklearn
