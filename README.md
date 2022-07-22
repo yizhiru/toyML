@@ -20,6 +20,9 @@
 - 召回
   - itemCF
   - node2vec
+  - YouTubeDNN
+  - SBCNM (Sampling-Bias-Corrected Neural Model)
+  - DSMM (Deep Structured Semantic Model)
 
 Hive-UDF实现tf.feature_column特征处理，包括：
 - 离线特征哈希，categorical_column_with_hash_bucket

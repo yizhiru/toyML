@@ -104,7 +104,7 @@ class MultivariateRankingNetwork(RankingNetwork):
             if name in self._sparse_embed_layers:
                 sparse_inputs.append(self._sparse_embed_layers[name](batch_context_features[name]))
             else:
-                dense_inputs.append(context_features[name])
+                dense_inputs.append(batch_context_features[name])
         for name in batch_example_features:
             if name in self._sparse_embed_layers:
                 sparse_inputs.append(self._sparse_embed_layers[name](batch_example_features[name]))

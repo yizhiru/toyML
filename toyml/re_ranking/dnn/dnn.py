@@ -89,7 +89,7 @@ class DNNRankingNetwork(RankingNetwork):
             if name in self._sparse_embed_layers:
                 sparse_input.append(self._sparse_embed_layers[name](large_batch_context_features[name]))
             else:
-                dense_input.append(context_features[name])
+                dense_input.append(large_batch_context_features[name])
         for name in large_batch_example_features:
             if name in self._sparse_embed_layers:
                 sparse_input.append(self._sparse_embed_layers[name](large_batch_example_features[name]))
