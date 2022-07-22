@@ -1,15 +1,18 @@
 import abc
+from typing import Dict
+from typing import Set
 
 import six
 import tensorflow as tf
 from tensorflow_ranking.python import utils
 from tensorflow_ranking.python.keras.network import RankingNetwork
-from typing import Dict
+
 from toyml.utils import build_embedding_layer
+from toyml.features import SequenceFeature
 
 
-class MultivariateRankingNetwork(RankingNetwork):
-    """Base class for multivariate ranking network."""
+class TwoTowerNetwork(RankingNetwork):
+    """Base class for two tower network."""
 
     __metaclass__ = abc.ABCMeta
 
@@ -17,9 +20,10 @@ class MultivariateRankingNetwork(RankingNetwork):
                  context_feature_columns=None,
                  example_feature_columns=None,
                  sparse_features: Dict = None,
-                 name='multivariate_ranking_network',
+                 sequence_features: Dict = None,
+                 name='two_tower_network',
                  **kwargs):
-        super(MultivariateRankingNetwork, self).__init__(
+        super(TwoTowerNetwork, self).__init__(
             context_feature_columns=context_feature_columns,
             example_feature_columns=example_feature_columns,
             name=name,
@@ -30,16 +34,19 @@ class MultivariateRankingNetwork(RankingNetwork):
                                                               feat.embed_dim,
                                                               'embed_' + feat.feature_name)
         self._sparse_embed_layers = sparse_embed_layers
+        self._sequence_features = sequence_features
 
     @abc.abstractmethod
     def score(self,
-              input_features=None,
+              context_inputs=None,
+              example_inputs=None,
               mask=None,
               training=None):
         """Multivariate scoring of context and multi example to generate a list of score .
 
         Args:
-          input_features: 3D feature tensors of shape [batch_size, list_size, ...].
+          context_inputs: (dict) context inputs to 2D tensors of shape [batch_size, ...].
+          example_inputs: (dict) example inputs names to 3D tensors of shape [batch_size, list_size, ...].
           mask: Mask is a tensor of shape [batch_size, list_size].
           training: (bool) whether in training or inference mode.
 
@@ -84,13 +91,14 @@ class MultivariateRankingNetwork(RankingNetwork):
             mask = tf.ones(shape=[batch_size, list_size], dtype=tf.bool)
         nd_indices, nd_mask = utils.padded_nd_indices(is_valid=mask)
 
-        # Expand context features to be of [batch_size, list_size, ...].
-        batch_context_features = {}
-        for name, tensor in six.iteritems(context_features):
-            x = tf.expand_dims(input=tensor, axis=1)
-            x = tf.gather(x, tf.zeros([list_size], tf.int32), axis=1)
-            batch_context_features[name] = utils.reshape_first_ndims(
-                x, 2, [batch_size, list_size])
+        # # Expand context features to be of [batch_size, list_size, ...].
+        # batch_context_features = {}
+        # for name, tensor in six.iteritems(context_features):
+        #     x = tf.expand_dims(input=tensor, axis=1)
+        #     x = tf.gather(x, tf.zeros([list_size], tf.int32), axis=1)
+        #     batch_context_features[name] = utils.reshape_first_ndims(
+        #         x, 2, [batch_size, list_size])
+        batch_context_features = context_features
 
         batch_example_features = {}
         for name, tensor in six.iteritems(example_features):
@@ -99,21 +107,33 @@ class MultivariateRankingNetwork(RankingNetwork):
             batch_example_features[name] = utils.reshape_first_ndims(
                 padded_tensor, 2, [batch_size, list_size])
 
-        sparse_inputs, dense_inputs = [], []
+        context_sparse_inputs, context_dense_inputs = [], []
         for name in batch_context_features:
-            if name in self._sparse_embed_layers:
-                sparse_inputs.append(self._sparse_embed_layers[name](batch_context_features[name]))
+            if name in self._sequence_features:
+                feat = self._sequence_features[name]
+                element_feat_name = feat.element_sparse_feature.feat_name
+                if element_feat_name in self._sparse_embed_layers:
+                    embed = self._sparse_embed_layers[element_feat_name](batch_context_features[name])
+                    pooling = tf.keras.layers.GlobalAveragePooling1D()(embed)
+                    context_sparse_inputs.append(pooling)
+            elif name in self._sparse_embed_layers:
+                context_sparse_inputs.append(self._sparse_embed_layers[name](batch_context_features[name]))
             else:
-                dense_inputs.append(batch_context_features[name])
+                context_dense_inputs.append(batch_context_features[name])
+        context_sparse_inputs = [tf.squeeze(inpt, axis=2) for inpt in context_sparse_inputs]
+        context_inputs = tf.concat(context_sparse_inputs + context_dense_inputs, axis=-1)
+
+        example_sparse_inputs, example_dense_inputs = [], []
         for name in batch_example_features:
             if name in self._sparse_embed_layers:
-                sparse_inputs.append(self._sparse_embed_layers[name](batch_example_features[name]))
+                example_sparse_inputs.append(self._sparse_embed_layers[name](batch_example_features[name]))
             else:
-                dense_inputs.append(batch_example_features[name])
-        sparse_inputs = [tf.squeeze(inpt, axis=2) for inpt in sparse_inputs]
-        inputs = tf.concat(sparse_inputs + dense_inputs, axis=-1)
+                example_dense_inputs.append(batch_example_features[name])
+        example_sparse_inputs = [tf.squeeze(inpt, axis=2) for inpt in example_sparse_inputs]
+        example_inputs = tf.concat(example_sparse_inputs + example_dense_inputs, axis=-1)
 
-        scores = self.score(inputs,
+        scores = self.score(context_inputs,
+                            example_inputs,
                             nd_mask,
                             training=training)
         scores = tf.reshape(scores, shape=[batch_size, list_size, -1])
