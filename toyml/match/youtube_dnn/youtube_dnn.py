@@ -64,11 +64,9 @@ class YouTubeDNNNetwork(TwoTowerNetwork):
 
 
 def cross_entropy_loss(labels, logits):
-    """Computes the cross entropy loss ."""
-    labels = tf.compat.v1.where(
-        utils.is_label_valid(labels), labels, tf.zeros_like(labels))
-    logits = tf.compat.v1.where(
-        utils.is_label_valid(labels), logits, tf.zeros_like(logits))
+    """Computes the negative log likehood loss ."""
+    labels = tf.compat.v1.where(utils.is_label_valid(labels), labels, tf.zeros_like(labels))
+    logits = tf.compat.v1.where(utils.is_label_valid(labels), logits, tf.zeros_like(logits))
 
     epsilon_ = constant_op.constant(K.epsilon(), dtype=logits.dtype.base_dtype)
     output = clip_ops.clip_by_value(logits, epsilon_, 1. - epsilon_)

@@ -1,17 +1,18 @@
 from typing import Dict
 
 import tensorflow as tf
-from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Softmax
-from tensorflow.python.framework import constant_op
-from tensorflow.python.ops import clip_ops
-from tensorflow.python.ops import math_ops
-from tensorflow.python.ops import nn
+
+from network import TwoTowerNetwork
+from utils import build_embedding_layer
 from tensorflow_ranking.python import utils
 
-from toyml.match.network import TwoTowerNetwork
-from toyml.utils import build_embedding_layer
+from tensorflow.python.ops import math_ops
+from tensorflow.python.ops import nn
+from tensorflow.keras import backend as K
+from tensorflow.python.framework import constant_op
+from tensorflow.python.ops import clip_ops
 
 
 class DSSMNetwork(TwoTowerNetwork):
@@ -92,10 +93,8 @@ def cosine_similarity(tensor1, tensor2, axis=-1):
 
 def dssm_loss(labels, logits):
     """Computes the DSMM model loss ."""
-    labels = tf.compat.v1.where(
-        utils.is_label_valid(labels), labels, tf.zeros_like(labels))
-    logits = tf.compat.v1.where(
-        utils.is_label_valid(labels), logits, tf.zeros_like(logits))
+    labels = tf.compat.v1.where(utils.is_label_valid(labels), labels, tf.zeros_like(labels))
+    logits = tf.compat.v1.where(utils.is_label_valid(labels), logits, tf.zeros_like(logits))
 
     epsilon_ = constant_op.constant(K.epsilon(), dtype=logits.dtype.base_dtype)
     output = clip_ops.clip_by_value(logits, epsilon_, 1. - epsilon_)

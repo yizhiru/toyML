@@ -1,6 +1,5 @@
 import abc
 from typing import Dict
-from typing import Set
 
 import six
 import tensorflow as tf
@@ -8,7 +7,6 @@ from tensorflow_ranking.python import utils
 from tensorflow_ranking.python.keras.network import RankingNetwork
 
 from toyml.utils import build_embedding_layer
-from toyml.features import SequenceFeature
 
 
 class TwoTowerNetwork(RankingNetwork):
@@ -91,37 +89,28 @@ class TwoTowerNetwork(RankingNetwork):
             mask = tf.ones(shape=[batch_size, list_size], dtype=tf.bool)
         nd_indices, nd_mask = utils.padded_nd_indices(is_valid=mask)
 
-        # # Expand context features to be of [batch_size, list_size, ...].
-        # batch_context_features = {}
-        # for name, tensor in six.iteritems(context_features):
-        #     x = tf.expand_dims(input=tensor, axis=1)
-        #     x = tf.gather(x, tf.zeros([list_size], tf.int32), axis=1)
-        #     batch_context_features[name] = utils.reshape_first_ndims(
-        #         x, 2, [batch_size, list_size])
         batch_context_features = context_features
-
         batch_example_features = {}
         for name, tensor in six.iteritems(example_features):
             # Replace invalid example features with valid ones.
             padded_tensor = tf.gather_nd(tensor, nd_indices)
-            batch_example_features[name] = utils.reshape_first_ndims(
-                padded_tensor, 2, [batch_size, list_size])
+            batch_example_features[name] = utils.reshape_first_ndims(padded_tensor, 2, [batch_size, list_size])
 
-        context_sparse_inputs, context_dense_inputs = [], []
+        context_sparse_inputs, context_dense_inputs, context_hist_inputs = [], [], []
         for name in batch_context_features:
             if name in self._sequence_features:
                 feat = self._sequence_features[name]
-                element_feat_name = feat.element_sparse_feature.feat_name
+                element_feat_name = feat.element_sparse_feature.feature_name
                 if element_feat_name in self._sparse_embed_layers:
                     embed = self._sparse_embed_layers[element_feat_name](batch_context_features[name])
                     pooling = tf.keras.layers.GlobalAveragePooling1D()(embed)
-                    context_sparse_inputs.append(pooling)
+                    context_hist_inputs.append(pooling)
             elif name in self._sparse_embed_layers:
                 context_sparse_inputs.append(self._sparse_embed_layers[name](batch_context_features[name]))
             else:
                 context_dense_inputs.append(batch_context_features[name])
-        context_sparse_inputs = [tf.squeeze(inpt, axis=2) for inpt in context_sparse_inputs]
-        context_inputs = tf.concat(context_sparse_inputs + context_dense_inputs, axis=-1)
+        context_sparse_inputs = [tf.squeeze(inpt, axis=1) for inpt in context_sparse_inputs]
+        context_inputs = tf.concat(context_sparse_inputs + context_dense_inputs + context_hist_inputs, axis=-1)
 
         example_sparse_inputs, example_dense_inputs = [], []
         for name in batch_example_features:
