@@ -17,11 +17,11 @@ from toyml.match import YouTubeDNNNetwork
 from toyml.match import cross_entropy_loss
 
 flags.DEFINE_string("train_path", 'train.tfrecord', "Input file path used for training.")
-flags.DEFINE_string("eval_path", 'eval.tfrecord', "Input file path used for eval.")
+flags.DEFINE_string("eval_path", 'test.tfrecord', "Input file path used for eval.")
 flags.DEFINE_string("model_dir", 'dnn_model', "Output directory for models.")
 
 flags.DEFINE_integer("batch_size", 1000, "The batch size for train.")
-flags.DEFINE_integer("epochs", 10, "Number of epochs for train.")
+flags.DEFINE_integer("epochs", 2, "Number of epochs for train.")
 
 flags.DEFINE_float("learning_rate", 0.05, "Learning rate for optimizer.")
 flags.DEFINE_integer("list_size", 15, "List size used for training. Use None for dynamic list size.")
@@ -30,10 +30,11 @@ flags.DEFINE_string('device_map', '2', 'CUDA visible devices.')
 
 FLAGS = flags.FLAGS
 
-_LABEL = 'label'
+_LABEL = 'label_list'
 _SIZE = "example_list_size"
 
 _EMBEDDING_DIM = 12
+_USER_EMBEDDING_DIM = 126
 
 
 def _create_feature_columns():
@@ -75,16 +76,19 @@ def _create_match_features():
         SparseFeature('u_age', 8, _EMBEDDING_DIM),
         SparseFeature('u_gender', 3, _EMBEDDING_DIM),
     ]
-    context_dense_features = []
+    context_dense_features = [
+        DenseFeature('u_ctr_7d'),
+        DenseFeature('u_ctr_30d'),
+    ]
     context_sequence_features = [
-        SequenceFeature('click_item_hist', 50, SparseFeature('item_id', 100, _EMBEDDING_DIM)),
+        SequenceFeature('tag_prefer_list', 10, SparseFeature('hash_tag_id', 10000, _EMBEDDING_DIM)),
+        SequenceFeature('click_feed_hist', 60, SparseFeature('hash_feed_id', 100000, _EMBEDDING_DIM)),
     ]
 
     # example features
     example_sparse_features = [
-        SparseFeature('i_hash_id', 100, _EMBEDDING_DIM),
+        SparseFeature('f_hash_id', 100000, _USER_EMBEDDING_DIM),
     ]
-
     return context_sparse_features, context_dense_features, context_sequence_features, example_sparse_features
 
 
@@ -106,7 +110,7 @@ def make_dataset(file_pattern,
         example_feature_spec=example_feature_spec,
         list_size=FLAGS.list_size,
         reader=tf.data.TFRecordDataset,
-        reader_args=['GZIP', 32],
+        reader_args=[None, 32],
         shuffle=randomize_input,
         num_epochs=num_epochs,
         size_feature_name=_SIZE)
@@ -126,7 +130,6 @@ def train_and_eval():
     eval_dataset = make_dataset(FLAGS.eval_path, FLAGS.batch_size)
 
     context_sparse_features, _, context_sequence_features, example_sparse_features = _create_match_features()
-    # parse sparse features
     sparse_features = {}
     for feat in context_sparse_features + example_sparse_features:
         sparse_features[feat.feature_name] = feat
@@ -141,12 +144,12 @@ def train_and_eval():
         example_feature_columns=example_feature_columns,
         sparse_features=sparse_features,
         sequence_features=sequence_features,
-        hidden_layer_dims=[1024, 512, 256],
+        hidden_layer_dims=[1024, 512, _USER_EMBEDDING_DIM],
         activation=tf.nn.relu)
 
-    metrics = [PrecisionMetric(name='precision@5', topn=5),
-               MeanAveragePrecisionMetric(name='map@5', topn=5),
-               NDCGMetric(name='ndcg@5', topn=5)]
+    metrics = [PrecisionMetric(name='precision@1', topn=1),
+               MeanAveragePrecisionMetric(name='map@1', topn=1),
+               NDCGMetric(name='ndcg@1', topn=1)]
     ranker = tfr.keras.model.create_keras_model(
         network=network,
         loss=cross_entropy_loss,
@@ -154,7 +157,7 @@ def train_and_eval():
         optimizer=tf.keras.optimizers.Adam(learning_rate=FLAGS.learning_rate),
         size_feature_name=_SIZE)
     callbacks = [keras.callbacks.ModelCheckpoint(filepath=FLAGS.model_dir,
-                                                 monitor='val_precision@5',
+                                                 monitor='val_ndcg@1',
                                                  mode='max',
                                                  save_best_only=True)
                  ]
