@@ -19,5 +19,7 @@ public class FeatureBinningUDFTest {
         assertEquals(8, udf.evaluate(401d, percentiles), 0);
         assertEquals(8, udf.evaluate(800d, percentiles), 0);
         assertEquals(9, udf.evaluate(801d, percentiles), 0);
+        assertEquals(0, udf.evaluate(1d, null), 0);
+        assertEquals(0, udf.evaluate(null, percentiles), 0);
     }
 }

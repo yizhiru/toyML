@@ -19,16 +19,22 @@ class GBDTLRClassifier:
                                    reg_lambda=0.1,
                                    opt='sgd',
                                    stop_window=4)
+        self.col_max_values = None
 
-    def fit(self, X_train, y_train, X_test):
+    def fit(self, X_train, y_train, X_test=None):
         self.xgb_model.fit(X_train, y_train)
-        X_train = xgb.DMatrix(X_train)
-        train_leaves = self.xgb_model.get_booster().predict(X_train, pred_leaf=True)
-        X_test = xgb.DMatrix(X_test)
-        test_leaves = self.xgb_model.get_booster().predict(X_test, pred_leaf=True)
-        self.__check_leaves(train_leaves, test_leaves)
+        train_leaves = self._predict_leaves(X_train)
+        if X_test is not None:
+            test_leaves = self._predict_leaves(X_test)
+            self.__check_leaves(train_leaves, test_leaves)
+        else:
+            self.col_max_values = np.max(train_leaves, axis=0)
         xgb_feats = self.__transform_leaves(train_leaves)
         self.lr_model.fit(xgb_feats, y_train)
+
+    def _predict_leaves(self, X):
+        dmatrix = xgb.DMatrix(X)
+        return self.xgb_model.get_booster().predict(dmatrix, pred_leaf=True)
 
     def __check_leaves(self, train_leaves, test_leaves):
         leaves = np.concatenate((train_leaves, test_leaves), axis=0)
@@ -45,10 +51,6 @@ class GBDTLRClassifier:
                                  dtype=np.float64).tocsr()
 
     def predict(self, X_test):
-        X_test = xgb.DMatrix(X_test)
-        test_leaves = self.xgb_model.get_booster().predict(X_test, pred_leaf=True)
+        test_leaves = self._predict_leaves(X_test)
         xgb_feats = self.__transform_leaves(test_leaves)
         return self.lr_model.predict(xgb_feats)
-
-
-

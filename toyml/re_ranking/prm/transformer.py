@@ -45,10 +45,9 @@ class TransformerEncoder(Layer):
         Args:
           key_mask: shape of [B, Sk]
         """
-        mask = tf.expand_dims(key_mask, axis=1)
+        mask = tf.cast(key_mask, dtype=tf.bool)
         key_size = tf.shape(key_mask)[-1]
-        mask = tf.gather(mask, tf.zeros([key_size], tf.int32), axis=1)
-        return tf.cast(mask, dtype=tf.bool)
+        return tf.tile(tf.expand_dims(mask, axis=1), [1, key_size, 1])
 
     def call(self, inputs, mask=None, training=None):
         pos_embed = self._pos_embed(inputs)

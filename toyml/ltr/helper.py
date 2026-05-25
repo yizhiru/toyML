@@ -49,3 +49,6 @@ def generate_tf_record(input_path, output_path, feature_names):
                 elwc = input_pb2.ExampleListWithContext()
                 elwc.examples.add().CopyFrom(_generate_per_example(features, label))
                 qid_mark = qid
+        if len(elwc.examples) > 0:
+            writer.write(elwc.SerializeToString())
+    writer.close()

@@ -91,7 +91,6 @@ object ItemCFSim {
       (t._1, t._2, score, na, nb, nab)
     }
       .toDF("item_id1", "item_id2", "sim_score", "na", "nb", "nab")
-    simDF.show()
 
 
     val tempViewName = s"temp_item_cf_recs"

@@ -1,9 +1,10 @@
-from features import SparseFeature
-from features import DenseFeature
-from features import SequenceFeature
+from toyml.features import DenseFeature
+from toyml.features import SequenceFeature
+from toyml.features import SparseFeature
 from tensorflow import keras as keras
-from tensorflow.keras.layers import Input
 from tensorflow.keras.layers import Embedding
+from tensorflow.keras.layers import Input
+import tensorflow as tf
 
 
 def build_input_layer(feature):
@@ -23,7 +24,12 @@ def build_embedding_layer(input_dim, output_dim, name, mask_zero=False, regulari
     return Embedding(
         input_dim=input_dim,
         output_dim=output_dim,
-        embeddings_initializer=keras.initializers.RandomNormal(mean=0.0, stddev=1e-4),
+        embeddings_initializer=keras.initializers.GlorotUniform(),
         embeddings_regularizer=regularizer,
         mask_zero=mask_zero,
         name=name)
+
+
+def expand_to_list_size(tensor, list_size):
+    """Expand a [batch_size, ...] tensor to [batch_size, list_size, ...]."""
+    return tf.tile(tf.expand_dims(tensor, axis=1), [1, list_size, 1])

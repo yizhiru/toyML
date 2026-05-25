@@ -1,7 +1,7 @@
 package io.github.yizhiru.toyml.dataset
 
 import org.apache.spark.sql.{SaveMode, SparkSession}
-import org.apache.spark.sql.functions.{col, udf}
+import org.apache.spark.sql.functions.{col, split}
 import scopt.OptionParser
 
 object CtrTFRecordDatasetGenerator {
@@ -10,7 +10,8 @@ object CtrTFRecordDatasetGenerator {
   case class Params(
                      inputTable: String = null,
                      outputPath: String = null,
-                     bizDay: String = null)
+                     bizDay: String = null,
+                     numPartitions: Int = 8)
 
   def main(args: Array[String]): Unit = {
     val defaultParams = Params()
@@ -29,6 +30,9 @@ object CtrTFRecordDatasetGenerator {
         .text("bizDay")
         .required()
         .action((x, c) => c.copy(bizDay = x))
+      opt[Int]("numPartitions")
+        .text("number of output partitions")
+        .action((x, c) => c.copy(numPartitions = x))
     }
 
     parser.parse(args, defaultParams) match {
@@ -46,21 +50,16 @@ object CtrTFRecordDatasetGenerator {
 
     val df = spark.sql(s"select * from ${params.inputTable} where pt = '${params.bizDay}' ")
 
-    // split string to int array
-    val splitUDF = udf { hist: String =>
-      hist.split(",")
-        .map(e => e.toInt)
-    }
-
-    val resultDF = df.withColumn("click_item_hist", splitUDF(col("click_item_hist")))
-      .withColumn("click_seller_hist", splitUDF(col("click_seller_hist")))
-      .withColumn("click_cid4_hist", splitUDF(col("click_cid4_hist")))
+    val resultDF = df
+      .withColumn("click_item_hist", split(col("click_item_hist"), ",").cast("array<int>"))
+      .withColumn("click_seller_hist", split(col("click_seller_hist"), ",").cast("array<int>"))
+      .withColumn("click_cid4_hist", split(col("click_cid4_hist"), ",").cast("array<int>"))
 
 
     val reservedColNames = Seq("uid", "item_id", "is_click", "hash_buyer_id",
-      "click_item_hist", "click_seller_hist")
+      "click_item_hist", "click_seller_hist", "click_cid4_hist")
     resultDF.select(reservedColNames.head, reservedColNames.tail: _*)
-      .repartition(1)
+      .repartition(params.numPartitions)
       .write
       .mode(SaveMode.Overwrite)
       .format("tfrecords")

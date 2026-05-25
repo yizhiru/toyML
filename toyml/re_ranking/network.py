@@ -6,6 +6,7 @@ from tensorflow_ranking.python import utils
 from tensorflow_ranking.python.keras.network import RankingNetwork
 from typing import Dict
 from toyml.utils import build_embedding_layer
+from toyml.utils import expand_to_list_size
 
 
 class MultivariateRankingNetwork(RankingNetwork):
@@ -87,8 +88,7 @@ class MultivariateRankingNetwork(RankingNetwork):
         # Expand context features to be of [batch_size, list_size, ...].
         batch_context_features = {}
         for name, tensor in six.iteritems(context_features):
-            x = tf.expand_dims(input=tensor, axis=1)
-            x = tf.gather(x, tf.zeros([list_size], tf.int32), axis=1)
+            x = expand_to_list_size(tensor, list_size)
             batch_context_features[name] = utils.reshape_first_ndims(
                 x, 2, [batch_size, list_size])
 
@@ -125,7 +125,7 @@ class MultivariateRankingNetwork(RankingNetwork):
         # Remove last dimension of shape = 1.
         try:
             logits = tf.squeeze(scores, axis=2)
-        except:
+        except ValueError:
             raise ValueError('Logits not of shape: [batch_size, list_size, 1]. '
                              'This could occur if the `scorer` does not return '
                              'a scalar output.')

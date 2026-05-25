@@ -24,7 +24,7 @@ object Node2VecSim {
                      q: Double = 1.0,
                      maxDegree: Int = 200,
                      lr: Double = 0.025,
-                     numPartitions: Int = 1,
+                     numPartitions: Int = 8,
                      numIter: Int = 10,
                      windowSize: Int = 5,
                      nodeDim: Int = 128,
@@ -67,7 +67,7 @@ object Node2VecSim {
         .text("lr")
         .action((x, c) => c.copy(lr = x))
       opt[Int]("numPartitions")
-        .text("num partition of word2vec")
+        .text("num partition of word2vec and similarity computation")
         .action((x, c) => c.copy(numPartitions = x))
       opt[Int]("numIter")
         .text("num Iteration of word2vec")
@@ -100,7 +100,6 @@ object Node2VecSim {
       .rdd
       .map { row =>
         val uid = row.getAs[String]("user_id")
-        // 用户行为序列
         val itemHist = row.getAs[Seq[Long]]("item_hist")
         (uid, itemHist)
       }
@@ -119,9 +118,22 @@ object Node2VecSim {
     spark.stop()
   }
 
+  private def cosineSimilarity(a: Array[Float], b: Array[Float]): Double = {
+    var dot = 0.0
+    var normA = 0.0
+    var normB = 0.0
+    var i = 0
+    while (i < a.length) {
+      dot += a(i) * b(i)
+      normA += a(i) * a(i)
+      normB += b(i) * b(i)
+      i += 1
+    }
+    if (normA == 0.0 || normB == 0.0) 0.0 else dot / (math.sqrt(normA) * math.sqrt(normB))
+  }
 
   /**
-   * Skip-gram 训练顶点向量，寻找最相似节点top-n
+   * Skip-gram 训练顶点向量，分布式计算最相似节点 top-n
    */
   private def findSimNode(spark: SparkSession,
                           walkPath: RDD[Seq[String]],
@@ -132,23 +144,30 @@ object Node2VecSim {
       .setWindowSize(params.windowSize)
       .setMinCount(0)
       .setVectorSize(params.nodeDim)
+      .setNumPartitions(params.numPartitions)
 
     val model = word2vec.fit(walkPath)
+    val vectors = model.getVectors.toArray
+    val vectorsBC = spark.sparkContext.broadcast(vectors)
 
     import spark.implicits._
-
-    val simDF = model.getVectors
-      .keys
+    val simRDD = spark.sparkContext
+      .parallelize(vectors.map(_._1), params.numPartitions)
       .flatMap { itemId =>
-        val simNodes = model.findSynonyms(itemId, params.numSimNode)
-        simNodes.map(t => (itemId, t._1, t._2))
+        val vecMap = vectorsBC.value.toMap
+        val queryVec = vecMap(itemId)
+        vectorsBC.value
+          .filter(_._1 != itemId)
+          .map { case (id2, vec2) => (id2, cosineSimilarity(queryVec, vec2)) }
+          .sortBy(-_._2)
+          .take(params.numSimNode)
+          .map { case (id2, score) => (itemId, id2, score) }
       }
-      .toSeq
-      .toDF("item_id1", "item_id2", "sim_score")
+
+    val simDF = simRDD.toDF("item_id1", "item_id2", "sim_score")
 
     val tempViewName = s"temp_node2vec_recs"
     simDF.createOrReplaceTempView(tempViewName)
-    spark.sql(s"use temp")
     spark.sql(s"drop table if exists ${params.outputTable}")
     spark.sql(s"create table ${params.outputTable} stored as orc as select * from $tempViewName")
   }

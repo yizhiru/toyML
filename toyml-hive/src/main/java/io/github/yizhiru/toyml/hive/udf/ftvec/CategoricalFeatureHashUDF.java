@@ -1,5 +1,6 @@
 package io.github.yizhiru.toyml.hive.udf.ftvec;
 
+import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import org.apache.hadoop.hive.ql.exec.UDF;
 
@@ -11,6 +12,8 @@ import java.nio.charset.StandardCharsets;
  */
 public final class CategoricalFeatureHashUDF extends UDF {
 
+    private static final HashFunction HASH_FUNCTION = Hashing.murmur3_32();
+
     /**
      * 特征hash公式：Hash(input_feature_string) % (bucket_size-1) + 1
      *
@@ -19,13 +22,14 @@ public final class CategoricalFeatureHashUDF extends UDF {
      * @return 特征哈希值
      */
     public int evaluate(String value, int bucketSize) {
+        if (bucketSize <= 1) {
+            return 0;
+        }
         if (value == null) {
             value = "";
         }
 
-        int bit = Hashing.murmur3_32()
-                .hashString(value, StandardCharsets.UTF_8)
-                .hashCode();
-        return Math.abs(bit) % (bucketSize - 1) + 1;
+        int bit = HASH_FUNCTION.hashString(value, StandardCharsets.UTF_8).asInt();
+        return Math.floorMod(bit, bucketSize - 1) + 1;
     }
 }
