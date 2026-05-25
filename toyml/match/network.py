@@ -14,32 +14,32 @@ class TwoTowerNetwork(RankingNetwork):
 
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self,
-                 context_feature_columns=None,
-                 example_feature_columns=None,
-                 sparse_features: Dict = None,
-                 sequence_features: Dict = None,
-                 name='two_tower_network',
-                 **kwargs):
+    def __init__(
+        self,
+        context_feature_columns=None,
+        example_feature_columns=None,
+        sparse_features: Dict = None,
+        sequence_features: Dict = None,
+        name="two_tower_network",
+        **kwargs,
+    ):
         super(TwoTowerNetwork, self).__init__(
             context_feature_columns=context_feature_columns,
             example_feature_columns=example_feature_columns,
             name=name,
-            **kwargs)
+            **kwargs,
+        )
         sparse_embed_layers = {}
         for name, feat in sparse_features.items():
-            sparse_embed_layers[name] = build_embedding_layer(feat.vocab_size,
-                                                              feat.embed_dim,
-                                                              'embed_' + feat.feature_name)
+            sparse_embed_layers[name] = build_embedding_layer(
+                feat.vocab_size, feat.embed_dim, "embed_" + feat.feature_name
+            )
         self._sparse_embed_layers = sparse_embed_layers
-        self._sequence_features = sequence_features
+        self._sequence_features = sequence_features or {}
+        self._sequence_pooling = tf.keras.layers.GlobalAveragePooling1D()
 
     @abc.abstractmethod
-    def score(self,
-              context_inputs=None,
-              example_inputs=None,
-              mask=None,
-              training=None):
+    def score(self, context_inputs=None, example_inputs=None, mask=None, training=None):
         """Multivariate scoring of context and multi example to generate a list of score .
 
         Args:
@@ -51,14 +51,13 @@ class TwoTowerNetwork(RankingNetwork):
         Returns:
           (tf.Tensor) A score tensor of shape [batch_size, list_size].
         """
-        raise NotImplementedError('Calling an abstract method, '
-                                  'MultivariateRankingNetwork.score().')
+        raise NotImplementedError(
+            "Calling an abstract method, " "MultivariateRankingNetwork.score()."
+        )
 
-    def compute_logits(self,
-                       context_features=None,
-                       example_features=None,
-                       training=None,
-                       mask=None):
+    def compute_logits(
+        self, context_features=None, example_features=None, training=None, mask=None
+    ):
         """Scores context and examples to return a score per example.
 
         Args:
@@ -80,7 +79,7 @@ class TwoTowerNetwork(RankingNetwork):
         """
 
         if not example_features:
-            raise ValueError('Need a valid example feature.')
+            raise ValueError("Need a valid example feature.")
 
         tensor = next(six.itervalues(example_features))
         batch_size = tf.shape(tensor)[0]
@@ -94,7 +93,9 @@ class TwoTowerNetwork(RankingNetwork):
         for name, tensor in six.iteritems(example_features):
             # Replace invalid example features with valid ones.
             padded_tensor = tf.gather_nd(tensor, nd_indices)
-            batch_example_features[name] = utils.reshape_first_ndims(padded_tensor, 2, [batch_size, list_size])
+            batch_example_features[name] = utils.reshape_first_ndims(
+                padded_tensor, 2, [batch_size, list_size]
+            )
 
         context_sparse_inputs, context_dense_inputs, context_hist_inputs = [], [], []
         for name in batch_context_features:
@@ -102,29 +103,40 @@ class TwoTowerNetwork(RankingNetwork):
                 feat = self._sequence_features[name]
                 element_feat_name = feat.element_sparse_feature.feature_name
                 if element_feat_name in self._sparse_embed_layers:
-                    embed = self._sparse_embed_layers[element_feat_name](batch_context_features[name])
-                    pooling = tf.keras.layers.GlobalAveragePooling1D()(embed)
+                    embed = self._sparse_embed_layers[element_feat_name](
+                        batch_context_features[name]
+                    )
+                    pooling = self._sequence_pooling(embed)
                     context_hist_inputs.append(pooling)
             elif name in self._sparse_embed_layers:
-                context_sparse_inputs.append(self._sparse_embed_layers[name](batch_context_features[name]))
+                context_sparse_inputs.append(
+                    self._sparse_embed_layers[name](batch_context_features[name])
+                )
             else:
                 context_dense_inputs.append(batch_context_features[name])
-        context_sparse_inputs = [tf.squeeze(inpt, axis=1) for inpt in context_sparse_inputs]
-        context_inputs = tf.concat(context_sparse_inputs + context_dense_inputs + context_hist_inputs, axis=-1)
+        context_sparse_inputs = [
+            tf.squeeze(inpt, axis=1) for inpt in context_sparse_inputs
+        ]
+        context_inputs = tf.concat(
+            context_sparse_inputs + context_dense_inputs + context_hist_inputs, axis=-1
+        )
 
         example_sparse_inputs, example_dense_inputs = [], []
         for name in batch_example_features:
             if name in self._sparse_embed_layers:
-                example_sparse_inputs.append(self._sparse_embed_layers[name](batch_example_features[name]))
+                example_sparse_inputs.append(
+                    self._sparse_embed_layers[name](batch_example_features[name])
+                )
             else:
                 example_dense_inputs.append(batch_example_features[name])
-        example_sparse_inputs = [tf.squeeze(inpt, axis=2) for inpt in example_sparse_inputs]
-        example_inputs = tf.concat(example_sparse_inputs + example_dense_inputs, axis=-1)
+        example_sparse_inputs = [
+            tf.squeeze(inpt, axis=2) for inpt in example_sparse_inputs
+        ]
+        example_inputs = tf.concat(
+            example_sparse_inputs + example_dense_inputs, axis=-1
+        )
 
-        scores = self.score(context_inputs,
-                            example_inputs,
-                            nd_mask,
-                            training=training)
+        scores = self.score(context_inputs, example_inputs, nd_mask, training=training)
         scores = tf.reshape(scores, shape=[batch_size, list_size, -1])
 
         # Apply nd_mask to zero out invalid entries.
@@ -134,8 +146,10 @@ class TwoTowerNetwork(RankingNetwork):
         # Remove last dimension of shape = 1.
         try:
             logits = tf.squeeze(scores, axis=2)
-        except:
-            raise ValueError('Logits not of shape: [batch_size, list_size, 1]. '
-                             'This could occur if the `scorer` does not return '
-                             'a scalar output.')
+        except ValueError:
+            raise ValueError(
+                "Logits not of shape: [batch_size, list_size, 1]. "
+                "This could occur if the `scorer` does not return "
+                "a scalar output."
+            )
         return logits

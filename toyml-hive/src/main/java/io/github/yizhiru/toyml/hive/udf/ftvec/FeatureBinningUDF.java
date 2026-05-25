@@ -17,16 +17,21 @@ public class FeatureBinningUDF extends UDF {
      * @return [0, len] 分箱值，若值为null，则返回0；若percentiles为null或长度为0，则返回0
      */
     public int evaluate(Double val, List<Double> percentiles) {
-        int len = percentiles.size();
-        if (len == 0 || val == null) {
+        if (val == null || percentiles == null || percentiles.isEmpty()) {
             return 0;
         }
 
-        for (int i = 0; i < len; i++) {
-            if (val <= percentiles.get(i)) {
-                return i;
+        int len = percentiles.size();
+        int left = 0;
+        int right = len;
+        while (left < right) {
+            int mid = (left + right) >>> 1;
+            if (val <= percentiles.get(mid)) {
+                right = mid;
+            } else {
+                left = mid + 1;
             }
         }
-        return len;
+        return left;
     }
 }

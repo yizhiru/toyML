@@ -1,7 +1,9 @@
-numpy
-tensorflow>=2.8.0
-tensorflow_ranking>=0.3.0
-xgboost
-sklearn
-xlearn
-scipy
+numpy>=1.21.0,<2.0.0
+tensorflow>=2.8.0,<2.16.0
+tensorflow-ranking>=0.3.0
+tensorflow-serving-api>=2.8.0
+tf-models-official>=2.8.0
+xgboost>=1.5.0
+scikit-learn>=1.0.0
+scipy>=1.7.0
+xlearn>=0.40a1

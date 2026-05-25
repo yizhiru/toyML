@@ -8,7 +8,8 @@ object RerankingTFRecordDataSetGenerator {
   case class Params(
                      inputTable: String = null,
                      outputPath: String = null,
-                     bizDay: String = null
+                     bizDay: String = null,
+                     numPartitions: Int = 8
                    )
 
   def main(args: Array[String]): Unit = {
@@ -27,6 +28,9 @@ object RerankingTFRecordDataSetGenerator {
         .text("bizDay")
         .required()
         .action((x, c) => c.copy(bizDay = x))
+      opt[Int]("numPartitions")
+        .text("number of output partitions")
+        .action((x, c) => c.copy(numPartitions = x))
     }
     parser.parse(args, defaultParams) match {
       case Some(params) => run(params)
@@ -55,7 +59,7 @@ object RerankingTFRecordDataSetGenerator {
         (qid, channel, uid, itemId, label, exampleListSize)
       }.toDF("qid", "channel", "uid", "item_id", "label", "example_list_size")
 
-    df.repartition(1)
+    df.repartition(params.numPartitions)
       .write
       .mode(SaveMode.Overwrite)
       .format("tfrecords")

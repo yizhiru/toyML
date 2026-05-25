@@ -1,1 +1,1 @@
-from din.din import create_din_model
+from toyml.ctr.din.din import create_din_model

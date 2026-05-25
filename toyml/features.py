@@ -9,7 +9,7 @@ class SparseFeature(
     Fields:
         feature_name: the name of sparse feature
         vocab_size: the size of spare feature vocabulary
-        embed_size: the embedding dimension size of feature
+        embed_dim: the embedding dimension size of feature
         mask_zero: Whether the index 0 is used for padding
     """
 

@@ -78,5 +78,5 @@ def negative_log_likelihood_loss(labels, logits):
     output = clip_ops.clip_by_value(logits, epsilon_, 1. - epsilon_)
 
     bce = labels * math_ops.log(output + K.epsilon())
-    # bce += (1 - labels) * math_ops.log(1 - output + K.epsilon())
+    bce += (1 - labels) * math_ops.log(1 - output + K.epsilon())
     return tf.compat.v1.losses.compute_weighted_loss(losses=-bce)

@@ -6,6 +6,7 @@ from tensorflow_ranking.python import utils
 from tensorflow_ranking.python.keras.network import RankingNetwork
 
 from toyml.utils import build_embedding_layer
+from toyml.utils import expand_to_list_size
 
 
 class DNNRankingNetwork(RankingNetwork):
@@ -71,8 +72,7 @@ class DNNRankingNetwork(RankingNetwork):
         # Expand query features to be of [batch_size, list_size, ...].
         large_batch_context_features = {}
         for name, tensor in six.iteritems(context_features):
-            x = tf.expand_dims(input=tensor, axis=1)
-            x = tf.gather(x, tf.zeros([list_size], tf.int32), axis=1)
+            x = expand_to_list_size(tensor, list_size)
             large_batch_context_features[name] = utils.reshape_first_ndims(
                 x, 2, [batch_size * list_size])
 
