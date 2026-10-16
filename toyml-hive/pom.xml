@@ -21,7 +21,7 @@
         <hadoop.version>3.4.0</hadoop.version>
         <hive.version>4.0.1</hive.version>
 
-        <jackson.version>2.13.4.2</jackson.version>
+        <jackson.version>2.18.11</jackson.version>
         <guava.version>32.0.0-jre</guava.version>
     </properties>
 
